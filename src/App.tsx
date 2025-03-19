@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { questions } from './data/questions';
 import { Answer } from './types';
 import IntroCard from './components/IntroCard';
@@ -6,7 +6,7 @@ import QuestionCard from './components/QuestionCard';
 import ProgressBar from './components/ProgressBar';
 import ResultCard from './components/ResultCard';
 import { calculateResults, getPersonalityResult } from './utils/calculateResults';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, HelpCircle } from 'lucide-react';
 
 function App() {
   const [currentStep, setCurrentStep] = useState<'intro' | 'questions' | 'results'>('intro');
@@ -19,6 +19,18 @@ function App() {
     T: 0, F: 0,
     J: 0, P: 0
   });
+  const [showTip, setShowTip] = useState(false);
+
+  // Show tip on first question
+  useEffect(() => {
+    if (currentStep === 'questions' && currentQuestionIndex === 0) {
+      setShowTip(true);
+      const timer = setTimeout(() => {
+        setShowTip(false);
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, currentQuestionIndex]);
 
   const handleStartTest = () => {
     setCurrentStep('questions');
@@ -76,7 +88,7 @@ function App() {
   const isNextDisabled = getCurrentAnswer() === null;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {currentStep === 'intro' && (
           <IntroCard onStart={handleStartTest} />
@@ -84,15 +96,36 @@ function App() {
 
         {currentStep === 'questions' && (
           <div className="w-full">
+            <div className="flex justify-center mb-4">
+              <h1 className="text-2xl font-bold text-indigo-800">Open<span className="text-indigo-600">16</span> Assessment</h1>
+            </div>
+            
             <ProgressBar 
               currentQuestion={currentQuestionIndex + 1} 
               totalQuestions={questions.length} 
             />
             
+            {showTip && (
+              <div className="mb-4 bg-indigo-50 border border-indigo-100 p-4 rounded-lg flex items-start">
+                <HelpCircle size={20} className="text-indigo-500 mr-2 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-indigo-800 font-medium">Quick Tip</p>
+                  <p className="text-indigo-700 text-sm">You can use keyboard shortcuts to answer questions faster. Press 1-5 to select an option, and Enter to move to the next question.</p>
+                </div>
+                <button 
+                  onClick={() => setShowTip(false)}
+                  className="ml-auto text-indigo-400 hover:text-indigo-600"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            
             <QuestionCard 
               question={questions[currentQuestionIndex]} 
               onAnswer={handleAnswer}
               currentAnswer={getCurrentAnswer()}
+              onSubmit={!isNextDisabled ? handleNext : undefined}
             />
             
             <div className="flex justify-between mt-6">
@@ -114,8 +147,8 @@ function App() {
                 disabled={isNextDisabled}
                 className={`flex items-center gap-1 py-2 px-4 rounded-md transition-colors ${
                   isNextDisabled
-                    ? 'bg-blue-400 text-white cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    ? 'bg-indigo-400 text-white cursor-not-allowed'
+                    : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                 }`}
               >
                 {currentQuestionIndex < questions.length - 1 ? 'Next' : 'See Results'}
@@ -138,6 +171,10 @@ function App() {
           />
         )}
       </div>
+      
+      <footer className="mt-8 text-center text-gray-500 text-sm">
+        <p>© {new Date().getFullYear()} Open16 • Free and Open Personality Assessment</p>
+      </footer>
     </div>
   );
 }

@@ -1,35 +1,84 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Question } from '../types';
+import { Keyboard } from 'lucide-react';
 
 interface QuestionCardProps {
   question: Question;
   onAnswer: (value: number) => void;
   currentAnswer: number | null;
+  onSubmit?: () => void;
 }
 
-const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, currentAnswer }) => {
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-2xl">
-      <h2 className="text-xl font-semibold mb-6 text-gray-800">{question.text}</h2>
+const QuestionCard: React.FC<QuestionCardProps> = ({ question, onAnswer, currentAnswer, onSubmit }) => {
+  const options = [
+    { value: -2, label: 'Strongly Disagree', key: '1' },
+    { value: -1, label: 'Disagree', key: '2' },
+    { value: 0, label: 'Neutral', key: '3' },
+    { value: 1, label: 'Agree', key: '4' },
+    { value: 2, label: 'Strongly Agree', key: '5' }
+  ];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Number keys 1-5 for selecting options
+      if (['1', '2', '3', '4', '5'].includes(e.key)) {
+        const index = parseInt(e.key) - 1;
+        if (index >= 0 && index < options.length) {
+          onAnswer(options[index].value);
+        }
+      }
       
-      <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-2 justify-between">
-        {[1, 2, 3, 4, 5].map((value) => (
+      // Enter key to submit if an answer is selected
+      if (e.key === 'Enter' && currentAnswer !== null && onSubmit) {
+        onSubmit();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentAnswer, onAnswer, onSubmit, options]);
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-xl font-semibold text-gray-800 mb-6">{question.text}</h2>
+      
+      <div className="space-y-3">
+        {options.map((option, index) => (
           <button
-            key={value}
-            onClick={() => onAnswer(value)}
-            className={`py-2 px-4 rounded-md transition-all duration-200 ${
-              currentAnswer === value
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-800'
+            key={option.value}
+            onClick={() => onAnswer(option.value)}
+            className={`w-full text-left p-3 rounded-md transition-colors ${
+              currentAnswer === option.value
+                ? 'bg-indigo-100 border-2 border-indigo-500 text-indigo-800'
+                : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
             }`}
           >
-            {value === 1 && 'Strongly Disagree'}
-            {value === 2 && 'Disagree'}
-            {value === 3 && 'Neutral'}
-            {value === 4 && 'Agree'}
-            {value === 5 && 'Strongly Agree'}
+            <div className="flex items-center">
+              <div className={`w-5 h-5 rounded-full mr-3 flex-shrink-0 ${
+                currentAnswer === option.value
+                  ? 'bg-indigo-500'
+                  : 'border-2 border-gray-300'
+              }`}>
+                {currentAnswer === option.value && (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                )}
+              </div>
+              <span>{option.label}</span>
+              <span className="ml-auto bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded">
+                {option.key}
+              </span>
+            </div>
           </button>
         ))}
+      </div>
+      
+      <div className="mt-4 flex items-center text-sm text-gray-500 bg-gray-50 p-3 rounded-md">
+        <Keyboard size={16} className="mr-2" />
+        <span>Tip: Use keys <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-xs mx-1">1</kbd>-<kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-xs mx-1">5</kbd> to select an option, then press <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-xs mx-1">Enter</kbd> to continue.</span>
       </div>
     </div>
   );
